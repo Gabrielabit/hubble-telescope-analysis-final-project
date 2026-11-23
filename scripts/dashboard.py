@@ -29,6 +29,30 @@ PALETA        = px.colors.qualitative.Bold
 app = Dash(__name__)
 app.title = "HST Dashboard"
 
+
+def painel(grafico_id, legenda_texto):
+    """Envolve um grafico com uma legenda descritiva abaixo."""
+    return html.Div([
+        dcc.Graph(id=grafico_id),
+        html.P(
+            legenda_texto,
+            style={
+                "color": "#8b949e",
+                "fontSize": "12px",
+                "margin": "8px 4px 4px 4px",
+                "lineHeight": "1.5",
+                "borderTop": f"1px solid {COR_BORDA}",
+                "paddingTop": "8px",
+            }
+        )
+    ], style={
+        "flex": "1",
+        "backgroundColor": COR_PAINEL,
+        "border": f"1px solid {COR_BORDA}",
+        "borderRadius": "8px",
+        "padding": "12px"
+    })
+
 app.layout = html.Div(style={"backgroundColor": COR_FUNDO, "minHeight": "100vh", "fontFamily": "Segoe UI, sans-serif", "padding": "24px"}, children=[
 
     # Cabeçalho
@@ -56,20 +80,33 @@ app.layout = html.Div(style={"backgroundColor": COR_FUNDO, "minHeight": "100vh",
 
     # Linha 1: barras + linhas
     html.Div([
-        html.Div(dcc.Graph(id="graf-instrumento"), style={"flex": "1", "backgroundColor": COR_PAINEL, "border": f"1px solid {COR_BORDA}", "borderRadius": "8px", "padding": "12px"}),
-        html.Div(dcc.Graph(id="graf-ano"),         style={"flex": "1", "backgroundColor": COR_PAINEL, "border": f"1px solid {COR_BORDA}", "borderRadius": "8px", "padding": "12px"}),
+        painel("graf-instrumento",
+               "Cada barra representa um instrumento cientifico instalado no Hubble (ex: WFC3, ACS). "
+               "O comprimento indica quantas observacoes foram feitas com aquele instrumento no periodo selecionado."),
+        painel("graf-ano",
+               "Linha do tempo mostrando como o volume de observacoes cientificas variou a cada ano. "
+               "Picos indicam periodos de alta atividade; quedas podem refletir manutencoes ou substituicao de instrumentos."),
     ], style={"display": "flex", "gap": "16px", "marginBottom": "20px"}),
 
     # Linha 2: rosca + barras filtros
     html.Div([
-        html.Div(dcc.Graph(id="graf-banda"),   style={"flex": "1", "backgroundColor": COR_PAINEL, "border": f"1px solid {COR_BORDA}", "borderRadius": "8px", "padding": "12px"}),
-        html.Div(dcc.Graph(id="graf-filtros"), style={"flex": "1", "backgroundColor": COR_PAINEL, "border": f"1px solid {COR_BORDA}", "borderRadius": "8px", "padding": "12px"}),
+        painel("graf-banda",
+               "O espectro eletromagnetico e dividido em regioes: Infravermelho (calor), Optico (luz visivel), "
+               "Ultravioleta (energia alta) e Raio-X. O grafico mostra em qual regiao o Hubble mais observou no periodo."),
+        painel("graf-filtros",
+               "Filtros opticos sao como 'oculos coloridos' acoplados aos instrumentos — cada um deixa passar apenas "
+               "um intervalo especifico de luz. Os mais usados revelam as linhas de emissao de hidrogenio, oxigenio e infravermelho proximo."),
     ], style={"display": "flex", "gap": "16px", "marginBottom": "20px"}),
 
     # Linha 3: exposição + tipo alvo
     html.Div([
-        html.Div(dcc.Graph(id="graf-exposicao"), style={"flex": "1", "backgroundColor": COR_PAINEL, "border": f"1px solid {COR_BORDA}", "borderRadius": "8px", "padding": "12px"}),
-        html.Div(dcc.Graph(id="graf-alvo"),      style={"flex": "1", "backgroundColor": COR_PAINEL, "border": f"1px solid {COR_BORDA}", "borderRadius": "8px", "padding": "12px"}),
+        painel("graf-exposicao",
+               "Tempo de exposicao e o quanto o sensor ficou aberto para captar luz de um alvo. "
+               "Exposicoes curtas (menos de 500s) sao usadas para objetos brilhantes; exposicoes longas (acima de 2000s) "
+               "capturam objetos muito distantes ou tenues, como galaxias primordiais."),
+        painel("graf-alvo",
+               "Classifica os objetos astronomicos observados: estrelas individuais, galaxias, nebulosas (nuvens de gas "
+               "onde nascem estrelas), aglomerados estelares e campos (regioes do ceu sem alvo especifico, usados para mapeamento)."),
     ], style={"display": "flex", "gap": "16px"}),
 
     # Rodapé
@@ -88,6 +125,30 @@ def layout_grafico(title):
         xaxis=dict(gridcolor=COR_BORDA, linecolor=COR_BORDA),
         yaxis=dict(gridcolor=COR_BORDA, linecolor=COR_BORDA),
     )
+
+
+def painel(grafico_id, legenda_texto):
+    """Envolve um grafico com uma legenda descritiva abaixo."""
+    return html.Div([
+        dcc.Graph(id=grafico_id),
+        html.P(
+            legenda_texto,
+            style={
+                "color": "#8b949e",
+                "fontSize": "12px",
+                "margin": "8px 4px 4px 4px",
+                "lineHeight": "1.5",
+                "borderTop": f"1px solid {COR_BORDA}",
+                "paddingTop": "8px",
+            }
+        )
+    ], style={
+        "flex": "1",
+        "backgroundColor": COR_PAINEL,
+        "border": f"1px solid {COR_BORDA}",
+        "borderRadius": "8px",
+        "padding": "12px"
+    })
 
 
 @app.callback(
@@ -110,18 +171,23 @@ def atualizar(periodo):
     exp_media  = d["tempo_exposicao_s"].median()
     alvos      = d["nome_alvo"].nunique()
 
-    def kpi(label, valor, cor=COR_DESTAQUE):
+    def kpi(label, valor, cor=COR_DESTAQUE, descricao=""):
         return html.Div([
-            html.P(label, style={"color": "#8b949e", "margin": "0 0 4px 0", "fontSize": "12px"}),
-            html.P(str(valor), style={"color": cor, "margin": 0, "fontSize": "28px", "fontWeight": "700"}),
+            html.P(label, style={"color": "#8b949e", "margin": "0 0 4px 0", "fontSize": "12px", "fontWeight": "600"}),
+            html.P(str(valor), style={"color": cor, "margin": "0 0 6px 0", "fontSize": "28px", "fontWeight": "700"}),
+            html.P(descricao, style={"color": "#484f58", "margin": 0, "fontSize": "11px", "lineHeight": "1.4"}),
         ], style={"flex": "1", "backgroundColor": COR_PAINEL, "border": f"1px solid {COR_BORDA}",
                   "borderRadius": "8px", "padding": "16px 20px"})
 
     kpis = [
-        kpi("Total de Observações", f"{total:,}"),
-        kpi("Instrumentos Distintos", instrumentos, "#3fb950"),
-        kpi("Exposição Mediana (s)", f"{exp_media:,.0f}", "#f78166"),
-        kpi("Alvos Únicos", alvos, "#d2a8ff"),
+        kpi("Total de Observacoes", f"{total:,}", COR_DESTAQUE,
+            "Numero de imagens cientificas registradas pelo Hubble no periodo filtrado."),
+        kpi("Instrumentos Distintos", instrumentos, "#3fb950",
+            "Quantidade de instrumentos diferentes utilizados nas observacoes."),
+        kpi("Exposicao Mediana (s)", f"{exp_media:,.0f}", "#f78166",
+            "Metade das observacoes durou menos que esse tempo (em segundos)."),
+        kpi("Alvos Unicos", alvos, "#d2a8ff",
+            "Numero de objetos astronomicos distintos observados no periodo."),
     ]
 
     # ── Gráfico 1: Observações por instrumento ────────────────────────────────
