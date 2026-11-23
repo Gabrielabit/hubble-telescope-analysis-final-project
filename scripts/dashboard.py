@@ -126,49 +126,79 @@ def atualizar(periodo):
 
     # ── Gráfico 1: Observações por instrumento ────────────────────────────────
     inst = d["instrumento_base"].value_counts().reset_index()
-    inst.columns = ["instrumento_base", "total"]
-    fig1 = px.bar(inst, x="total", y="instrumento_base", orientation="h",
-                  color="instrumento_base", color_discrete_sequence=PALETA,
-                  labels={"total": "Observações", "instrumento_base": ""})
-    fig1.update_layout(**layout_grafico("Observações por Instrumento"))
+    inst.columns = ["Instrumento", "Quantidade"]
+    fig1 = px.bar(inst, x="Quantidade", y="Instrumento", orientation="h",
+                  color="Instrumento", color_discrete_sequence=PALETA,
+                  labels={"Quantidade": "Numero de Observacoes", "Instrumento": ""})
+    fig1.update_layout(**layout_grafico("Numero de Observacoes por Instrumento do Hubble"))
     fig1.update_traces(showlegend=False)
 
     # ── Gráfico 2: Evolução por ano ───────────────────────────────────────────
-    por_ano = d.groupby("ano").size().reset_index(name="total")
-    fig2 = px.line(por_ano, x="ano", y="total",
+    por_ano = d.groupby("ano").size().reset_index(name="Quantidade")
+    por_ano.columns = ["Ano", "Quantidade"]
+    fig2 = px.line(por_ano, x="Ano", y="Quantidade",
                    markers=True, color_discrete_sequence=[COR_DESTAQUE],
-                   labels={"ano": "Ano", "total": "Observações"})
-    fig2.update_layout(**layout_grafico("Evolução de Observações por Ano"))
+                   labels={"Ano": "Ano da Observacao", "Quantidade": "Numero de Observacoes"})
+    fig2.update_layout(**layout_grafico("Evolucao do Volume de Observacoes ao Longo dos Anos"))
 
     # ── Gráfico 3: Distribuição por banda espectral ───────────────────────────
-    banda = d["banda_espectral"].fillna("Desconhecida").value_counts().reset_index()
-    banda.columns = ["banda_espectral", "total"]
-    fig3 = px.pie(banda, names="banda_espectral", values="total", hole=0.45,
+    TRADUCAO_BANDA = {
+        "Infrared":    "Infravermelho",
+        "Optical":     "Óptico (Luz Visível)",
+        "UV":          "Ultravioleta",
+        "EUV":         "UV Extremo",
+        "X-ray":       "Raio-X",
+        "Radio":       "Rádio",
+        "Desconhecida":"Não Classificada",
+    }
+    banda = d["banda_espectral"].fillna("Não Classificada")
+    banda = banda.map(lambda x: TRADUCAO_BANDA.get(x, x)).value_counts().reset_index()
+    banda.columns = ["Banda Espectral", "Quantidade"]
+    fig3 = px.pie(banda, names="Banda Espectral", values="Quantidade", hole=0.45,
                   color_discrete_sequence=PALETA)
-    fig3.update_layout(**layout_grafico("Distribuição por Banda Espectral"))
+    fig3.update_traces(textposition="inside", textinfo="percent+label")
+    fig3.update_layout(**layout_grafico("Distribuicao por Regiao do Espectro Eletromagnetico"))
 
     # ── Gráfico 4: Top 10 filtros ─────────────────────────────────────────────
-    filtros = d["filtro"].fillna("N/A").value_counts().head(10).reset_index()
-    filtros.columns = ["filtro", "total"]
-    fig4 = px.bar(filtros, x="filtro", y="total",
-                  color="filtro", color_discrete_sequence=PALETA,
-                  labels={"filtro": "Filtro", "total": "Observações"})
-    fig4.update_layout(**layout_grafico("Top 10 Filtros Ópticos Utilizados"))
+    filtros = d["filtro"].fillna("Sem filtro").value_counts().head(10).reset_index()
+    filtros.columns = ["Filtro Optico", "Quantidade"]
+    fig4 = px.bar(filtros, x="Filtro Optico", y="Quantidade",
+                  color="Filtro Optico", color_discrete_sequence=PALETA,
+                  labels={"Filtro Optico": "Filtro Optico", "Quantidade": "Numero de Observacoes"})
+    fig4.update_layout(**layout_grafico("Top 10 Filtros Opticos Mais Utilizados"))
+    fig4.update_layout(xaxis_tickangle=-35)
     fig4.update_traces(showlegend=False)
 
     # ── Gráfico 5: Distribuição do tempo de exposição ─────────────────────────
-    exp = d["tempo_exposicao_s"].dropna()
+    exp = d["tempo_exposicao_s"].dropna().rename("Tempo de Exposicao (segundos)")
     fig5 = px.histogram(exp, nbins=50, color_discrete_sequence=[COR_DESTAQUE],
-                        labels={"value": "Tempo de Exposição (s)", "count": "Frequência"})
-    fig5.update_layout(**layout_grafico("Distribuição do Tempo de Exposição"))
+                        labels={"Tempo de Exposicao (segundos)": "Duracao da Exposicao (segundos)",
+                                "count": "Numero de Observacoes"})
+    fig5.update_layout(**layout_grafico("Distribuicao da Duracao das Exposicoes"))
+    fig5.update_layout(showlegend=False)
 
     # ── Gráfico 6: Top 10 tipos de alvo ──────────────────────────────────────
-    alvo = d["tipo_alvo"].fillna("N/A").value_counts().head(10).reset_index()
-    alvo.columns = ["tipo_alvo", "total"]
-    fig6 = px.bar(alvo, x="tipo_alvo", y="total",
-                  color="tipo_alvo", color_discrete_sequence=PALETA,
-                  labels={"tipo_alvo": "Tipo de Alvo", "total": "Observações"})
-    fig6.update_layout(**layout_grafico("Top 10 Tipos de Alvo Astronômico"))
+    TRADUCAO_ALVO = {
+        "field":          "Campo Estelar",
+        "galaxy":         "Galaxia",
+        "star":           "Estrela",
+        "cluster":        "Aglomerado",
+        "nebula":         "Nebulosa",
+        "solar system":   "Sistema Solar",
+        "quasar":         "Quasar",
+        "supernova":      "Supernova",
+        "globular":       "Aglomerado Globular",
+        "calibration":    "Calibracao",
+        "N/A":            "Nao Informado",
+    }
+    alvo = d["tipo_alvo"].fillna("Nao Informado")
+    alvo = alvo.map(lambda x: TRADUCAO_ALVO.get(x, x)).value_counts().head(10).reset_index()
+    alvo.columns = ["Tipo de Alvo", "Quantidade"]
+    fig6 = px.bar(alvo, x="Tipo de Alvo", y="Quantidade",
+                  color="Tipo de Alvo", color_discrete_sequence=PALETA,
+                  labels={"Tipo de Alvo": "Tipo de Alvo Astronomico", "Quantidade": "Numero de Observacoes"})
+    fig6.update_layout(**layout_grafico("Top 10 Tipos de Alvo Astronomico Observados"))
+    fig6.update_layout(xaxis_tickangle=-25)
     fig6.update_traces(showlegend=False)
 
     return kpis, fig1, fig2, fig3, fig4, fig5, fig6
