@@ -1,7 +1,7 @@
 # Análise de Observações do Telescópio Espacial Hubble (HST)
 
-Projeto de BI e Análise de Dados — ADS Impacta  
-Aluna: Gabriela
+Uma análise das observações científicas do Telescópio Espacial Hubble, utilizando dados públicos da Agência Espacial Europeia.
+Projeto de BI e Análise de Dados — ADS Impacta
 
 ---
 
